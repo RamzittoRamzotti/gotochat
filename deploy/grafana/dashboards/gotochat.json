@@ -1,0 +1,56 @@
+{
+  "title": "Gotochat",
+  "uid": "gotochat",
+  "schemaVersion": 38,
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Active Clients",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "expr": "gotochat_active_clients_total",
+          "legendFormat": "Clients"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active Rooms",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "expr": "gotochat_active_rooms_total",
+          "legendFormat": "Rooms"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Messages Total",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "expr": "gotochat_messages_total",
+          "legendFormat": "Messages"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    }
+  ]
+}

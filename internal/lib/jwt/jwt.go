@@ -7,42 +7,46 @@ import (
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userID string) (string, error) {
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
+func GenerateToken(name string) (string, error) {
+	privKeyBytes, err := os.ReadFile("./keys/id_ed25519")
+	if err != nil {
+		return "", err
+	}
+	privKey, err := jwt.ParseEdPrivateKeyFromPEM(privKeyBytes)
+	if err != nil {
+		return "", err
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"name": name,
 	})
-	privKey, err := os.ReadFile("./keys/id_ed25519")
-	if err != nil {
-		return "", err
-	}
-	tokenString, err := jwtToken.SignedString(privKey)
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
+	return token.SignedString(privKey)
 }
 
-func ValidateToken(token string) (string, error) {
-	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		pubKey, err := os.ReadFile("./keys/id_ed25519.pub")
-		if err != nil {
-			return nil, err
-		}
-		return jwt.ParseEdPublicKeyFromPEM(pubKey)
-	})
+func ValidateToken(tokenStr string) (string, error) {
+	pubKeyBytes, err := os.ReadFile("./keys/id_ed25519.pub")
 	if err != nil {
 		return "", err
 	}
-	if !tokenObj.Valid {
-		return "", errors.New("Invalid token")
+	pubKey, err := jwt.ParseEdPublicKeyFromPEM(pubKeyBytes)
+	if err != nil {
+		return "", err
+	}
+	tokenObj, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return pubKey, nil
+	})
+	if err != nil || !tokenObj.Valid {
+		return "", errors.New("invalid token")
 	}
 	claims, ok := tokenObj.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", errors.New("Failed to extract claims")
+		return "", errors.New("failed to extract claims")
 	}
-	userID, ok := claims["user_id"].(string)
+	name, ok := claims["name"].(string)
 	if !ok {
-		return "", errors.New("Failed to extract user ID")
+		return "", errors.New("failed to extract name")
 	}
-	return userID, nil
+	return name, nil
 }

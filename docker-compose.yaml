@@ -1,15 +1,16 @@
-version: '3.8'
 services:
   app:
     build: .
     ports:
       - "8080:8080"
-    volumes:
-      - .:/app
-    command: go run main.go
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/gotodb
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
-    image: postgres:latest
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -18,3 +19,32 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d gotodb"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  db_data:
+  grafana_data:

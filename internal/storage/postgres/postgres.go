@@ -17,5 +17,19 @@ func New(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("postgres ping: %w", err)
 	}
 
+	if err = migrate(ctx, pool); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
+
 	return pool, nil
+}
+
+func migrate(ctx context.Context, pool *pgxpool.Pool) error {
+	_, err := pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS users (
+			username      TEXT PRIMARY KEY,
+			password_hash BYTEA NOT NULL
+		)
+	`)
+	return err
 }

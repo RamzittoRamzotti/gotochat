@@ -19,12 +19,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		userID, err := jwt.ValidateToken(token)
+		name, err := jwt.ValidateToken(token)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		r = r.WithContext(context.WithValue(r.Context(), "userID", userID))
+		r = r.WithContext(context.WithValue(r.Context(), "name", name))
 
 		next.ServeHTTP(w, r)
 	})
