@@ -38,10 +38,13 @@ func (ch *ChatHandler) Chat() http.HandlerFunc {
 		}
 
 		client := domain.NewClient(conn, cookie.Value)
+
 		client.Rooms[roomID] = room
 		room.Regsiter <- client
 
 		go client.SendMessage(*ch.chatService.Logger)
-		client.ReadMessage(*ch.chatService.Logger)
+		client.ReadMessage(*ch.chatService.Logger, func() {
+			ch.chatService.Logger.Info("client disconnected", "client_name", client.Name)
+		})
 	}
 }

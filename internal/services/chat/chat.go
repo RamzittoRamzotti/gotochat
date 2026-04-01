@@ -1,11 +1,14 @@
 package chat
 
 import (
+	"errors"
 	"log/slog"
 
 	"github.com/RamzittoRamzotti/gotochat.git/internal/domain"
 	"github.com/RamzittoRamzotti/gotochat.git/internal/metrics"
 )
+
+var ErrRoomNotFound = errors.New("room not found")
 
 type ChatService struct {
 	Rooms   map[string]*domain.Room
@@ -26,20 +29,22 @@ func (s *ChatService) AddRoom(room *domain.Room) {
 	metrics.ActiveRooms.Inc()
 }
 
-func (s *ChatService) AddClientToRoom(roomID string, client *domain.Client) (*domain.Room, bool) {
-	room, exists := s.Rooms[roomID]
-	if !exists {
-		return nil, false
-	}
-	s.Clients[client.Name] = client
-	return room, true
+func (s *ChatService) Room(roomID string) (*domain.Room, bool) {
+	room, ok := s.Rooms[roomID]
+	return room, ok
 }
 
-func (s *ChatService) RemoveClientFromRoom(roomID string, client *domain.Client) {
-	room, exists := s.Rooms[roomID]
-	if !exists {
-		return
+func (s *ChatService) JoinRoom(roomID string, client *domain.Client) error {
+	room, ok := s.Rooms[roomID]
+	if !ok {
+		return ErrRoomNotFound
 	}
+	s.Clients[client.Name] = client
+	client.Rooms[roomID] = room
+	room.Regsiter <- client
+	return nil
+}
+
+func (s *ChatService) LeaveClient(client *domain.Client) {
 	delete(s.Clients, client.Name)
-	room.RemoveClient(client)
 }

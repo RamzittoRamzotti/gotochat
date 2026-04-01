@@ -71,11 +71,13 @@ func (c *Client) SendMessage(logger slog.Logger) error {
 	}
 }
 
-func (c *Client) ReadMessage(logger slog.Logger) error {
+func (c *Client) ReadMessage(logger slog.Logger, onDisconnect func()) error {
 	defer func() {
-		metrics.ActiveClients.Dec()
 		for _, room := range c.Rooms {
 			room.Unregister <- c
+		}
+		if onDisconnect != nil {
+			onDisconnect()
 		}
 		c.Conn.Close()
 	}()
